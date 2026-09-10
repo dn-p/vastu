@@ -51,10 +51,13 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Vastu Backend running on http://0.0.0.0:${PORT}`);
-  console.log(`📱 Android Emulator access: http://10.0.2.2:${PORT}`);
-  console.log(`🌐 Health check: http://localhost:${PORT}/api/health`);
-});
+if (!process.env.VERCEL) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Vastu Backend running on http://0.0.0.0:${PORT}`);
+    console.log(`📱 Android Emulator access: http://10.0.2.2:${PORT}`);
+    console.log(`🌐 Health check: http://localhost:${PORT}/api/health`);
+  });
+}
 
 module.exports = app;
+
