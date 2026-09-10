@@ -56,3 +56,5 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`📱 Android Emulator access: http://10.0.2.2:${PORT}`);
   console.log(`🌐 Health check: http://localhost:${PORT}/api/health`);
 });
+
+module.exports = app;
