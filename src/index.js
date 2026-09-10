@@ -19,7 +19,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Static files for uploaded images
-app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+const os = require('os');
+const uploadStaticDir = process.env.VERCEL
+  ? path.join(os.tmpdir(), 'uploads')
+  : path.join(__dirname, '..', 'uploads');
+app.use('/uploads', express.static(uploadStaticDir));
 
 // Routes
 app.use('/api/auth', authRoutes);
