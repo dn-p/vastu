@@ -1,0 +1,119 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  password     String
+  name         String
+  role         String        // MANDOR, ADMIN_LOGISTIK, PM, OWNER
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  projects     Project[]     @relation("ProjectCreator")
+  progressLogs ProgressLog[] @relation("LogReporter")
+  approvals    ProgressLog[] @relation("LogApprover")
+  materialLogs MaterialLog[]
+}
+
+model Project {
+  id          String        @id @default(uuid())
+  name        String
+  location    String
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  status      String        @default("ACTIVE") // ACTIVE, COMPLETED, ON_HOLD
+  createdBy   String
+  creator     User          @relation("ProjectCreator", fields: [createdBy], references: [id])
+  tasks       Task[]
+  inventories Inventory[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model Task {
+  id            String        @id @default(uuid())
+  projectId     String
+  project       Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parentId      String?
+  parent        Task?         @relation("TaskHierarchy", fields: [parentId], references: [id])
+  children      Task[]        @relation("TaskHierarchy")
+  name          String
+  description   String?
+  weightPercent Float         @default(0)
+  plannedStart  DateTime
+  plannedEnd    DateTime
+  progressLogs  ProgressLog[]
+  materialLogs  MaterialLog[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model ProgressLog {
+  id             String         @id @default(uuid())
+  taskId         String
+  task           Task           @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  reporterId     String
+  reporter       User           @relation("LogReporter", fields: [reporterId], references: [id])
+  percentage     Float
+  description    String
+  photoUrls      String         @default("[]") // JSON array stored as string
+  gpsLat         Float
+  gpsLng         Float
+  gpsAddress     String?
+  timestamp      DateTime       @default(now())
+  approvalStatus String         @default("PENDING") // PENDING, APPROVED, REJECTED
+  approvedById   String?
+  approvedBy     User?          @relation("LogApprover", fields: [approvedById], references: [id])
+  createdAt      DateTime       @default(now())
+}
+
+model Material {
+  id          String      @id @default(uuid())
+  name        String      @unique
+  unit        String
+  minStock    Float       @default(0)
+  description String?
+  inventories Inventory[]
+  createdAt   DateTime    @default(now())
+}
+
+model Inventory {
+  id           String        @id @default(uuid())
+  projectId    String
+  project      Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  materialId   String
+  material     Material      @relation(fields: [materialId], references: [id])
+  currentStock Float         @default(0)
+  logs         MaterialLog[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@unique([projectId, materialId])
+}
+
+model MaterialLog {
+  id           String    @id @default(uuid())
+  inventoryId  String
+  inventory    Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  type         String    // IN, OUT
+  quantity     Float
+  note         String?
+  supplierName String?
+  taskId       String?
+  task         Task?     @relation(fields: [taskId], references: [id])
+  createdById  String
+  createdBy    User      @relation(fields: [createdById], references: [id])
+  timestamp    DateTime  @default(now())
+  createdAt    DateTime  @default(now())
+}
